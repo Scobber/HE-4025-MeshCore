@@ -77,11 +77,13 @@ with:
 
 ```text
 c-stack.c:55:26: error: missing binary operator before token "("
+freadahead.c:92:3: error: #error "Please port gnulib freadahead.c to your platform!"
 ```
 
-The build script copies an Ubuntu-derived `m4` patch into
-`openwrt/tools/m4/patches` so host-tool compilation no longer depends on
-`SIGSTKSZ` being a compile-time constant.
+The build script copies two host `m4` compatibility patches into
+`openwrt/tools/m4/patches`: one removes the `SIGSTKSZ` dependency, and the
+other applies the glibc 2.28 `gnulib` fixes for `freadahead`, `fflush`,
+`fpurge`, `freading`, and `fseeko`.
 
 The Dragino tree also ships `openwrt/package/kernel/qmi-wwan-q/Makefile` with
 obsolete dependency names like `cdc-wdm`, `usbcore`, and `usbnet`. The build
