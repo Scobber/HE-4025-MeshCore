@@ -107,6 +107,39 @@ configure_dragino_download_mirrors() {
     fi
 }
 
+install_dragino_host_tool_patches() {
+    local patch_src="$REPO_ROOT/firmware/host-tool-patches/m4/100-fix-sigstksz.patch"
+    local patch_dir="$SDK_DIR/openwrt/tools/m4/patches"
+    local patch_dst="$patch_dir/100-fix-sigstksz.patch"
+
+    if [ ! -f "$patch_src" ]; then
+        echo "Expected host m4 patch not found: $patch_src" >&2
+        exit 1
+    fi
+
+    echo "Installing host m4 SIGSTKSZ patch"
+    mkdir -p "$patch_dir"
+    cp "$patch_src" "$patch_dst"
+}
+
+patch_dragino_qmi_wwan_q() {
+    local pkg_makefile="$SDK_DIR/openwrt/package/kernel/qmi-wwan-q/Makefile"
+
+    if [ ! -f "$pkg_makefile" ]; then
+        return
+    fi
+
+    if grep -q 'DEPENDS:=+kmod-usb-wdm +kmod-usb-core +kmod-usb-net' "$pkg_makefile"; then
+        return
+    fi
+
+    echo "Updating Dragino qmi-wwan-q dependencies to current OpenWrt package names"
+    sed -i.bak \
+        -e 's#DEPENDS:=+cdc-wdm +usbcore +usbnet#DEPENDS:=+kmod-usb-wdm +kmod-usb-core +kmod-usb-net#' \
+        "$pkg_makefile"
+    rm -f "$pkg_makefile.bak"
+}
+
 firmware_image_exists() {
     [ -d "$SDK_DIR/image" ] || return 1
     find "$SDK_DIR/image" -type f -name "*-v${VERSION}-squashfs-sysupgrade.bin" -print -quit | grep -q .
@@ -184,6 +217,8 @@ fi
 
 patch_dragino_prereqs
 configure_dragino_download_mirrors
+install_dragino_host_tool_patches
+patch_dragino_qmi_wwan_q
 
 PKG_DIR="$SDK_DIR/openwrt/package/meshcore-he4025"
 FILES_DIR="$SDK_DIR/files-$APP"

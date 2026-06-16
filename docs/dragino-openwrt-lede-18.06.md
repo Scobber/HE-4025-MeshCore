@@ -72,6 +72,22 @@ The Dragino LEDE tree also has an old GCC prerequisite regex that accepts GCC
 SDK so current GitHub runners pass the same compiler check without using
 `FORCE=1`.
 
+The host `m4` tool in this tree also trips over modern glibc on Ubuntu 22.04+
+with:
+
+```text
+c-stack.c:55:26: error: missing binary operator before token "("
+```
+
+The build script copies an Ubuntu-derived `m4` patch into
+`openwrt/tools/m4/patches` so host-tool compilation no longer depends on
+`SIGSTKSZ` being a compile-time constant.
+
+The Dragino tree also ships `openwrt/package/kernel/qmi-wwan-q/Makefile` with
+obsolete dependency names like `cdc-wdm`, `usbcore`, and `usbnet`. The build
+script rewrites those to `kmod-usb-wdm`, `kmod-usb-core`, and `kmod-usb-net`
+so OpenWrt stops warning about missing packages during the target prereq stage.
+
 The original LEDE source mirror can time out:
 
 ```text
