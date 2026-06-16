@@ -28,6 +28,36 @@ Environment overrides:
 EOF
 }
 
+run_dragino_feed_setup() {
+    local log_file
+    log_file="$(mktemp)"
+
+    set +e
+    (cd "$SDK_DIR" && ./set_up_build_environment.sh) >"$log_file" 2>&1
+    local status=$?
+    set -e
+
+    awk '
+        /^WARNING: No feed for source package '\''lua'\'' found$/ {
+            ignored++
+            next
+        }
+        /^WARNING: No feed for package '\''(libc|libssp|librt|libpthread)'\'' found$/ {
+            ignored++
+            next
+        }
+        { print }
+        END {
+            if (ignored > 0) {
+                printf("Note: suppressed %d known Dragino/OpenWrt feed warnings for lua/libc/libssp/librt/libpthread.\n", ignored)
+            }
+        }
+    ' "$log_file"
+    rm -f "$log_file"
+
+    return "$status"
+}
+
 SINGLE_THREAD=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -73,7 +103,7 @@ fi
 
 if [ ! -d "$SDK_DIR/openwrt/feeds" ]; then
     echo "Setting up Dragino feeds"
-    (cd "$SDK_DIR" && ./set_up_build_environment.sh)
+    run_dragino_feed_setup
 fi
 
 PKG_DIR="$SDK_DIR/openwrt/package/meshcore-he4025"
@@ -90,6 +120,7 @@ cp "$REPO_ROOT/openwrt/Makefile" "$PKG_DIR/Makefile"
 echo "Installing firmware overlay into $FILES_DIR"
 rm -rf "$FILES_DIR"
 cp -R "$REPO_ROOT/firmware/files-meshcore-he4025" "$FILES_DIR"
+mkdir -p "$FILES_DIR/etc/config"
 
 BOARD_CONFIG="$REPO_ROOT/boards/$BOARD_PROFILE.conf"
 if [ ! -f "$BOARD_CONFIG" ]; then

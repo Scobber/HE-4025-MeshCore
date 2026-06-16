@@ -50,6 +50,20 @@ The script:
 8. runs OpenWrt `make defconfig`
 9. runs `./build_image.sh -a meshcore-he4025`
 
+During feed setup, Dragino's old OpenWrt feed installer may print warnings like:
+
+```text
+WARNING: No feed for package 'libc' found
+WARNING: No feed for package 'libssp' found
+WARNING: No feed for package 'librt' found
+WARNING: No feed for package 'libpthread' found
+WARNING: No feed for source package 'lua' found
+```
+
+Those packages are OpenWrt toolchain/base packages, not feed packages. The build
+script suppresses only those known harmless Dragino/OpenWrt feed lines and
+leaves other warnings visible.
+
 Output images land under:
 
 ```text
