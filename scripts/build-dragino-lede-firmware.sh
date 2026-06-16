@@ -78,18 +78,60 @@ patch_dragino_prereqs() {
 
 configure_dragino_download_mirrors() {
     local mirror_file="$SDK_DIR/openwrt/scripts/localmirrors"
+    local download_script="$SDK_DIR/openwrt/scripts/download.pl"
 
     if [ ! -d "$SDK_DIR/openwrt/scripts" ]; then
         echo "Expected OpenWrt scripts directory not found: $SDK_DIR/openwrt/scripts" >&2
         exit 1
     fi
+    if [ ! -f "$download_script" ]; then
+        echo "Expected OpenWrt download script not found: $download_script" >&2
+        exit 1
+    fi
 
-    echo "Configuring current OpenWrt source mirrors before Dragino's stale LEDE mirror"
+    echo "Configuring current OpenWrt source mirrors and removing Dragino's stale LEDE mirror"
     printf '%s\n' \
         "https://sources.openwrt.org" \
         "https://sources.cdn.openwrt.org" \
         "https://downloads.openwrt.org/sources" \
         > "$mirror_file"
+
+    sed -i.bak \
+        "/push @mirrors, 'https:\\/\\/sources\\.lede-project\\.org';/d" \
+        "$download_script"
+    rm -f "$download_script.bak"
+
+    if grep -q "sources.lede-project.org" "$download_script"; then
+        echo "Failed to remove stale sources.lede-project.org mirror from $download_script" >&2
+        exit 1
+    fi
+}
+
+firmware_image_exists() {
+    [ -d "$SDK_DIR/image" ] || return 1
+    find "$SDK_DIR/image" -type f -name "*-v${VERSION}-squashfs-sysupgrade.bin" -print -quit | grep -q .
+}
+
+clear_previous_versioned_images() {
+    [ -d "$SDK_DIR/image" ] || return 0
+    find "$SDK_DIR/image" -type f -name "*-v${VERSION}-squashfs-sysupgrade.bin" -exec rm -f {} +
+}
+
+run_dragino_image_build() {
+    local mode="$1"
+
+    case "$mode" in
+        single)
+            (cd "$SDK_DIR" && ./build_image.sh -a "$APP" -v "$VERSION" -s)
+            ;;
+        parallel)
+            (cd "$SDK_DIR" && ./build_image.sh -a "$APP" -v "$VERSION")
+            ;;
+        *)
+            echo "Unknown build mode: $mode" >&2
+            exit 1
+            ;;
+    esac
 }
 
 SINGLE_THREAD=0
@@ -197,11 +239,30 @@ fi
 echo "Pre-downloading OpenWrt sources with $download_jobs jobs"
 (cd "$SDK_DIR/openwrt" && make download -j"$download_jobs" V=s)
 
+clear_previous_versioned_images
+
 echo "Building firmware app=$APP version=$VERSION board_profile=$BOARD_PROFILE"
 if [ "$SINGLE_THREAD" -eq 1 ]; then
-    (cd "$SDK_DIR" && ./build_image.sh -a "$APP" -v "$VERSION" -s)
+    run_dragino_image_build single
 else
-    (cd "$SDK_DIR" && ./build_image.sh -a "$APP" -v "$VERSION")
+    set +e
+    run_dragino_image_build parallel
+    build_status=$?
+    set -e
+
+    if [ "$build_status" -ne 0 ]; then
+        echo "Parallel Dragino build exited with status $build_status; rerunning single-threaded for a useful failure log"
+        run_dragino_image_build single
+    elif ! firmware_image_exists; then
+        echo "Parallel Dragino build did not produce a sysupgrade image; rerunning single-threaded for a useful failure log"
+        run_dragino_image_build single
+    fi
+fi
+
+if ! firmware_image_exists; then
+    echo "No versioned sysupgrade image was produced for version $VERSION" >&2
+    echo "Expected something like: $SDK_DIR/image/*/*-v$VERSION-squashfs-sysupgrade.bin" >&2
+    exit 1
 fi
 
 echo "Firmware images are under: $SDK_DIR/image"

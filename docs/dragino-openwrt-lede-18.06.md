@@ -50,6 +50,7 @@ The script:
 8. runs OpenWrt `make defconfig`
 9. pre-downloads source tarballs with `make download`
 10. runs `./build_image.sh -a meshcore-he4025`
+11. verifies that a versioned `*-squashfs-sysupgrade.bin` was produced
 
 During feed setup, Dragino's old OpenWrt feed installer may print warnings like:
 
@@ -77,14 +78,21 @@ The original LEDE source mirror can time out:
 curl: (28) Failed to connect to sources.lede-project.org port 443
 ```
 
-The build script writes `openwrt/scripts/localmirrors` in the cloned SDK so
-current OpenWrt source mirrors are tried before Dragino's stale LEDE mirror:
+The build script writes `openwrt/scripts/localmirrors` in the cloned SDK and
+removes the hard-coded `sources.lede-project.org` fallback from
+`openwrt/scripts/download.pl`:
 
 ```text
 https://sources.openwrt.org
 https://sources.cdn.openwrt.org
 https://downloads.openwrt.org/sources
 ```
+
+Dragino's `build_image.sh` can print `Build Fails` but still exit with status
+`0`. The wrapper treats a missing versioned sysupgrade image as a build failure.
+For parallel builds, it reruns `build_image.sh` with `-s` so the CI log shows
+the first real compiler or package failure instead of failing later during
+artifact collection.
 
 Output images land under:
 
