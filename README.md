@@ -106,6 +106,14 @@ There is also a Dragino IBB-v1.0 starting profile at
 `boards/dragino-ibb-v1.0.conf`. Its GPIO values are placeholders until the
 HE-4025 Linux GPIO numbers are confirmed.
 
+For the 2x LoRa hardware variant, use
+`boards/dragino-ibb-v1.0-dual-lora.conf`. See `docs/dual-lora-profile.md`.
+You can bake it into the replacement firmware with:
+
+```sh
+./scripts/build-firmware.sh --board-profile dragino-ibb-v1.0-dual-lora
+```
+
 Example key/value config:
 
 ```text

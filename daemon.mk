@@ -40,6 +40,7 @@ install: all
 	install -m 0755 $(PROBE) $(DESTDIR)$(BINDIR)/$(PROBE)
 	install -d $(DESTDIR)$(PREFIX)/share/meshcore-he4025/boards
 	install -m 0644 boards/dragino-ibb-v1.0.conf $(DESTDIR)$(PREFIX)/share/meshcore-he4025/boards/dragino-ibb-v1.0.conf
+	install -m 0644 boards/dragino-ibb-v1.0-dual-lora.conf $(DESTDIR)$(PREFIX)/share/meshcore-he4025/boards/dragino-ibb-v1.0-dual-lora.conf
 	install -d $(DESTDIR)/etc/config
 	install -m 0644 openwrt/files/etc/config/meshcore $(DESTDIR)/etc/config/meshcore
 	install -d $(DESTDIR)/etc/init.d
@@ -47,4 +48,3 @@ install: all
 
 clean:
 	rm -f $(DAEMON_OBJS) $(DAEMON) $(PROBE)
-

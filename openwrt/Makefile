@@ -52,6 +52,8 @@ define Package/meshcore-he4025/install
 	$(INSTALL_DIR) $(1)/usr/share/meshcore-he4025/boards
 	$(INSTALL_CONF) $(MESHCORE_HE4025_SRC)/boards/dragino-ibb-v1.0.conf \
 		$(1)/usr/share/meshcore-he4025/boards/dragino-ibb-v1.0.conf
+	$(INSTALL_CONF) $(MESHCORE_HE4025_SRC)/boards/dragino-ibb-v1.0-dual-lora.conf \
+		$(1)/usr/share/meshcore-he4025/boards/dragino-ibb-v1.0-dual-lora.conf
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) $(MESHCORE_HE4025_SRC)/openwrt/files/etc/config/meshcore \
 		$(1)/etc/config/meshcore

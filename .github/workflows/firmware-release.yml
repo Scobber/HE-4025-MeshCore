@@ -81,6 +81,24 @@ jobs:
           restore-keys: |
             openwrt-dl-${{ runner.os }}-
 
+      - name: Build test pieces
+        shell: bash
+        run: |
+          make clean
+          make
+          ./meshcore-he4025 --help
+
+          image_dir="${{ steps.version.outputs.image_dir }}"
+          mkdir -p "$image_dir"
+
+          cp meshcore-he4025 "$image_dir/meshcore-he4025-${{ steps.version.outputs.version }}-linux-x86_64"
+          cp sx1276-regversion "$image_dir/sx1276-regversion-${{ steps.version.outputs.version }}-linux-x86_64"
+
+          rm -rf test-root
+          make DESTDIR="$PWD/test-root" install
+          tar -C test-root -czf "$image_dir/meshcore-he4025-test-root-${{ steps.version.outputs.version }}.tar.gz" .
+          make clean
+
       - name: Build firmware
         shell: bash
         run: |

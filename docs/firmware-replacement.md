@@ -69,8 +69,18 @@ Tags use this shape:
 firmware-meshcore-YYYYMMDDHHMM-SHORTSHA-runN
 ```
 
-The release assets include the generated `*-squashfs-sysupgrade.bin` image and
-`sha256sums` when Dragino's build produces it.
+The release assets include the generated `*-squashfs-sysupgrade.bin` image,
+`sha256sums` when Dragino's build produces it, and the standalone bring-up/test
+pieces:
+
+```text
+meshcore-he4025-VERSION-linux-x86_64
+sx1276-regversion-VERSION-linux-x86_64
+meshcore-he4025-test-root-VERSION.tar.gz
+```
+
+Those host binaries are CI smoke-build artifacts. The flashable device payload
+is still the Dragino `*-squashfs-sysupgrade.bin`.
 
 ## First Boot
 

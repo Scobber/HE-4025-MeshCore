@@ -32,16 +32,23 @@ For serial failure logs:
 ./scripts/build-firmware.sh --single-thread
 ```
 
+To build the 2x LoRa profile into `/etc/config/meshcore`:
+
+```sh
+./scripts/build-firmware.sh --board-profile dragino-ibb-v1.0-dual-lora
+```
+
 The script:
 
 1. clones `https://github.com/dragino/openwrt_lede-18.06.git` into `build/openwrt_lede-18.06`
 2. runs Dragino's `set_up_build_environment.sh` if feeds are not ready
 3. copies this package to `openwrt/package/meshcore-he4025`
 4. copies the firmware overlay to `files-meshcore-he4025`
-5. creates `.config.meshcore-he4025` from Dragino's `.config.lgw`
-6. appends `firmware/meshcore-he4025.config.append`
-7. runs OpenWrt `make defconfig`
-8. runs `./build_image.sh -a meshcore-he4025`
+5. installs the selected `boards/*.conf` profile as `/etc/config/meshcore`
+6. creates `.config.meshcore-he4025` from Dragino's `.config.lgw`
+7. appends `firmware/meshcore-he4025.config.append`
+8. runs OpenWrt `make defconfig`
+9. runs `./build_image.sh -a meshcore-he4025`
 
 Output images land under:
 

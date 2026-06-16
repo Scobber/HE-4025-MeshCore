@@ -7,10 +7,11 @@ SDK_DIR="${SDK_DIR:-$BUILD_ROOT/openwrt_lede-18.06}"
 APP="${APP:-meshcore-he4025}"
 VERSION="${VERSION:-$("$REPO_ROOT/scripts/firmware-version.sh")}"
 DRAGINO_REPO="${DRAGINO_REPO:-https://github.com/dragino/openwrt_lede-18.06.git}"
+BOARD_PROFILE="${BOARD_PROFILE:-dragino-ibb-v1.0}"
 
 usage() {
     cat <<EOF
-Usage: $0 [--sdk DIR] [--build-root DIR] [--version VERSION] [--single-thread]
+Usage: $0 [--sdk DIR] [--build-root DIR] [--version VERSION] [--board-profile PROFILE] [--single-thread]
 
 Builds a full Dragino HE/DRAGINO2 OpenWrt LEDE 18.06 sysupgrade image with
 the meshcore-he4025 package, embedded stats web UI, and OTA endpoint included.
@@ -23,6 +24,7 @@ Environment overrides:
   BUILD_ROOT    Directory for cloning when SDK_DIR is not set
   VERSION       Firmware version suffix, auto-generated when omitted
   APP           Dragino app name, default meshcore-he4025
+  BOARD_PROFILE Board config from boards/ without .conf, default dragino-ibb-v1.0
 EOF
 }
 
@@ -40,6 +42,10 @@ while [ "$#" -gt 0 ]; do
             ;;
         --version)
             VERSION="$2"
+            shift 2
+            ;;
+        --board-profile)
+            BOARD_PROFILE="$2"
             shift 2
             ;;
         --single-thread)
@@ -85,6 +91,15 @@ echo "Installing firmware overlay into $FILES_DIR"
 rm -rf "$FILES_DIR"
 cp -R "$REPO_ROOT/firmware/files-meshcore-he4025" "$FILES_DIR"
 
+BOARD_CONFIG="$REPO_ROOT/boards/$BOARD_PROFILE.conf"
+if [ ! -f "$BOARD_CONFIG" ]; then
+    echo "Unknown board profile: $BOARD_PROFILE" >&2
+    echo "Expected config file: $BOARD_CONFIG" >&2
+    exit 1
+fi
+echo "Installing board profile $BOARD_PROFILE as /etc/config/meshcore"
+cp "$BOARD_CONFIG" "$FILES_DIR/etc/config/meshcore"
+
 if [ ! -f "$SDK_DIR/.config.lgw" ]; then
     echo "Expected Dragino base config not found: $SDK_DIR/.config.lgw" >&2
     exit 1
@@ -106,7 +121,7 @@ cp "$CONFIG_FILE" "$SDK_DIR/openwrt/.config"
 (cd "$SDK_DIR/openwrt" && make defconfig)
 cp "$SDK_DIR/openwrt/.config" "$CONFIG_FILE"
 
-echo "Building firmware app=$APP version=$VERSION"
+echo "Building firmware app=$APP version=$VERSION board_profile=$BOARD_PROFILE"
 if [ "$SINGLE_THREAD" -eq 1 ]; then
     (cd "$SDK_DIR" && ./build_image.sh -a "$APP" -v "$VERSION" -s)
 else
