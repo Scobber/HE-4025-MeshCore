@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+STOP=10
+
+BIN=/usr/bin/meshcore-he4025
+CONF=/etc/config/meshcore
+PID=/var/run/meshcore-he4025.pid
+
+start() {
+	echo "Starting meshcore-he4025"
+	start-stop-daemon -S -q -b -m -p "$PID" -x "$BIN" -- -c "$CONF"
+}
+
+stop() {
+	echo "Stopping meshcore-he4025"
+	start-stop-daemon -K -q -p "$PID"
+}
+
+restart() {
+	stop
+	sleep 1
+	start
+}
+

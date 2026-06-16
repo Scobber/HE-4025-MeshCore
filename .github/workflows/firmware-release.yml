@@ -1,0 +1,125 @@
+name: Firmware Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: firmware-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-release:
+    name: Build Dragino LEDE firmware
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+
+    env:
+      APP: meshcore-he4025
+      BUILD_ROOT: ${{ github.workspace }}/build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create release version
+        id: version
+        shell: bash
+        run: |
+          version="$(./scripts/firmware-version.sh)"
+          tag="firmware-${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "image_dir=${GITHUB_WORKSPACE}/release-assets" >> "$GITHUB_OUTPUT"
+
+      - name: Install OpenWrt build dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf \
+            automake \
+            build-essential \
+            clang \
+            bison \
+            cpio \
+            file \
+            flex \
+            g++ \
+            g++-multilib \
+            gawk \
+            gcc-multilib \
+            gettext \
+            git \
+            libelf-dev \
+            libtool \
+            libncurses5-dev \
+            libssl-dev \
+            patch \
+            perl \
+            python3 \
+            python3-distutils \
+            python-is-python3 \
+            rsync \
+            subversion \
+            swig \
+            time \
+            unzip \
+            wget \
+            zlib1g-dev
+
+      - name: Cache OpenWrt downloads
+        uses: actions/cache@v4
+        with:
+          path: build/openwrt_lede-18.06/openwrt/dl
+          key: openwrt-dl-${{ runner.os }}-${{ hashFiles('scripts/build-dragino-lede-firmware.sh', 'firmware/meshcore-he4025.config.append') }}
+          restore-keys: |
+            openwrt-dl-${{ runner.os }}-
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          ./scripts/build-firmware.sh --version "${{ steps.version.outputs.version }}"
+
+      - name: Collect firmware images
+        id: collect
+        shell: bash
+        run: |
+          image_dir="${{ steps.version.outputs.image_dir }}"
+          mkdir -p "$image_dir"
+
+          find build/openwrt_lede-18.06/image -type f \
+            \( -name '*-squashfs-sysupgrade.bin' -o -name 'sha256sums' \) \
+            -exec cp -v {} "$image_dir"/ \;
+
+          if ! find "$image_dir" -type f -name '*-squashfs-sysupgrade.bin' | grep -q .; then
+            echo "No sysupgrade image was produced" >&2
+            exit 1
+          fi
+
+          {
+            echo "assets<<EOF"
+            find "$image_dir" -type f | sort
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ steps.version.outputs.version }}
+          path: ${{ steps.version.outputs.image_dir }}/*
+          if-no-files-found: error
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Firmware ${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: ${{ steps.collect.outputs.assets }}

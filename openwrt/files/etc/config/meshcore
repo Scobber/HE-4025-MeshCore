@@ -1,0 +1,38 @@
+config meshcore 'main'
+	option role 'repeater'
+	option region 'AU915'
+	option frequency '915800000'
+	option spreading_factor '11'
+	option bandwidth '250000'
+	option coding_rate '5'
+	option tx_power '17'
+	option sync_word '0x12'
+
+	option spi_device '/dev/spidev0.0'
+	option spi_speed '1000000'
+
+	# Use -1 when /dev/spidevX.Y owns chip-select.
+	option pin_nss '-1'
+
+	# Fill these in after checking the HE-4025 GPIO map.
+	option pin_reset '?'
+	option pin_dio0 '?'
+	option pin_dio1 '?'
+	option pin_dio2 '?'
+
+	option poll_ms '5'
+
+	# Keep false until bench TX and AU915 channel use are controlled.
+	option repeat_raw 'false'
+
+	option device_name 'meshcore-he4025'
+	option web_enabled 'true'
+	option web_bind '0.0.0.0'
+	option web_port '8080'
+
+	# OTA requires a token other than change-me before uploads are accepted.
+	option ota_enabled 'false'
+	option ota_token 'change-me'
+	option ota_image_path '/tmp/meshcore-sysupgrade.bin'
+	option ota_keep_config 'false'
+	option ota_max_upload_bytes '16777216'

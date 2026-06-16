@@ -1,0 +1,4 @@
+# MeshCore HE-4025 replacement firmware additions.
+CONFIG_PACKAGE_meshcore-he4025=y
+CONFIG_PACKAGE_kmod-spi-dev=y
+CONFIG_PACKAGE_uclibcxx=y
