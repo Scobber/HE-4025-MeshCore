@@ -64,6 +64,12 @@ Those packages are OpenWrt toolchain/base packages, not feed packages. The build
 script suppresses only those known harmless Dragino/OpenWrt feed lines and
 leaves other warnings visible.
 
+The Dragino LEDE tree also has an old GCC prerequisite regex that accepts GCC
+`4.8` through `9`, but rejects modern two-digit versions such as GCC `11` or
+`12`. The build script patches `openwrt/include/prereq-build.mk` in the cloned
+SDK so current GitHub runners pass the same compiler check without using
+`FORCE=1`.
+
 Output images land under:
 
 ```text

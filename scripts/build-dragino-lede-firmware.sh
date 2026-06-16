@@ -58,6 +58,24 @@ run_dragino_feed_setup() {
     return "$status"
 }
 
+patch_dragino_prereqs() {
+    local prereq_file="$SDK_DIR/openwrt/include/prereq-build.mk"
+
+    if [ ! -f "$prereq_file" ]; then
+        echo "Expected OpenWrt prereq file not found: $prereq_file" >&2
+        exit 1
+    fi
+
+    if grep -q "\\[1-9\\]\\[0-9\\]" "$prereq_file"; then
+        return
+    fi
+
+    echo "Patching Dragino GCC prerequisite regex for modern host GCC versions"
+    sed -i.bak \
+        -e "s#grep -E '^(4\\\\\\.\\[8-9\\]|\\[5-9\\]\\\\\\.?)'#grep -E '^(4[.][8-9]|[5-9][.]?|[1-9][0-9][.]?)'#g" \
+        "$prereq_file"
+}
+
 SINGLE_THREAD=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -105,6 +123,8 @@ if [ ! -d "$SDK_DIR/openwrt/feeds" ]; then
     echo "Setting up Dragino feeds"
     run_dragino_feed_setup
 fi
+
+patch_dragino_prereqs
 
 PKG_DIR="$SDK_DIR/openwrt/package/meshcore-he4025"
 FILES_DIR="$SDK_DIR/files-$APP"
