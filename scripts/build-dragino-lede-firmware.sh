@@ -76,6 +76,22 @@ patch_dragino_prereqs() {
         "$prereq_file"
 }
 
+configure_dragino_download_mirrors() {
+    local mirror_file="$SDK_DIR/openwrt/scripts/localmirrors"
+
+    if [ ! -d "$SDK_DIR/openwrt/scripts" ]; then
+        echo "Expected OpenWrt scripts directory not found: $SDK_DIR/openwrt/scripts" >&2
+        exit 1
+    fi
+
+    echo "Configuring current OpenWrt source mirrors before Dragino's stale LEDE mirror"
+    printf '%s\n' \
+        "https://sources.openwrt.org" \
+        "https://sources.cdn.openwrt.org" \
+        "https://downloads.openwrt.org/sources" \
+        > "$mirror_file"
+}
+
 SINGLE_THREAD=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -125,6 +141,7 @@ if [ ! -d "$SDK_DIR/openwrt/feeds" ]; then
 fi
 
 patch_dragino_prereqs
+configure_dragino_download_mirrors
 
 PKG_DIR="$SDK_DIR/openwrt/package/meshcore-he4025"
 FILES_DIR="$SDK_DIR/files-$APP"
@@ -171,6 +188,14 @@ echo "Resolving OpenWrt config dependencies"
 cp "$CONFIG_FILE" "$SDK_DIR/openwrt/.config"
 (cd "$SDK_DIR/openwrt" && make defconfig)
 cp "$SDK_DIR/openwrt/.config" "$CONFIG_FILE"
+
+download_jobs="${DOWNLOAD_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)}"
+if ! [[ "$download_jobs" =~ ^[0-9]+$ ]] || [ "$download_jobs" -lt 1 ]; then
+    download_jobs=2
+fi
+
+echo "Pre-downloading OpenWrt sources with $download_jobs jobs"
+(cd "$SDK_DIR/openwrt" && make download -j"$download_jobs" V=s)
 
 echo "Building firmware app=$APP version=$VERSION board_profile=$BOARD_PROFILE"
 if [ "$SINGLE_THREAD" -eq 1 ]; then

@@ -48,7 +48,8 @@ The script:
 6. creates `.config.meshcore-he4025` from Dragino's `.config.lgw`
 7. appends `firmware/meshcore-he4025.config.append`
 8. runs OpenWrt `make defconfig`
-9. runs `./build_image.sh -a meshcore-he4025`
+9. pre-downloads source tarballs with `make download`
+10. runs `./build_image.sh -a meshcore-he4025`
 
 During feed setup, Dragino's old OpenWrt feed installer may print warnings like:
 
@@ -69,6 +70,21 @@ The Dragino LEDE tree also has an old GCC prerequisite regex that accepts GCC
 `12`. The build script patches `openwrt/include/prereq-build.mk` in the cloned
 SDK so current GitHub runners pass the same compiler check without using
 `FORCE=1`.
+
+The original LEDE source mirror can time out:
+
+```text
+curl: (28) Failed to connect to sources.lede-project.org port 443
+```
+
+The build script writes `openwrt/scripts/localmirrors` in the cloned SDK so
+current OpenWrt source mirrors are tried before Dragino's stale LEDE mirror:
+
+```text
+https://sources.openwrt.org
+https://sources.cdn.openwrt.org
+https://downloads.openwrt.org/sources
+```
 
 Output images land under:
 
