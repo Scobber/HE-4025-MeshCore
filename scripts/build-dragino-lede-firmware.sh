@@ -110,9 +110,12 @@ configure_dragino_download_mirrors() {
 install_dragino_host_tool_patches() {
     local patch_src="$REPO_ROOT/firmware/host-tool-patches/m4/100-fix-sigstksz.patch"
     local patch_src_glibc="$REPO_ROOT/firmware/host-tool-patches/m4/101-fix-ftbfs-with-glibc-2.28.patch"
+    local patch_src_bison="$REPO_ROOT/firmware/host-tool-patches/bison/100-fix-glibc-2.28-fseterr.patch"
     local patch_dir="$SDK_DIR/openwrt/tools/m4/patches"
     local patch_dst="$patch_dir/100-fix-sigstksz.patch"
     local patch_dst_glibc="$patch_dir/101-fix-ftbfs-with-glibc-2.28.patch"
+    local bison_patch_dir="$SDK_DIR/openwrt/tools/bison/patches"
+    local bison_patch_dst="$bison_patch_dir/100-fix-glibc-2.28-fseterr.patch"
 
     if [ ! -f "$patch_src" ]; then
         echo "Expected host m4 patch not found: $patch_src" >&2
@@ -122,11 +125,19 @@ install_dragino_host_tool_patches() {
         echo "Expected host m4 patch not found: $patch_src_glibc" >&2
         exit 1
     fi
+    if [ ! -f "$patch_src_bison" ]; then
+        echo "Expected host bison patch not found: $patch_src_bison" >&2
+        exit 1
+    fi
 
     echo "Installing host m4 compatibility patches"
     mkdir -p "$patch_dir"
     cp "$patch_src" "$patch_dst"
     cp "$patch_src_glibc" "$patch_dst_glibc"
+
+    echo "Installing host bison compatibility patch"
+    mkdir -p "$bison_patch_dir"
+    cp "$patch_src_bison" "$bison_patch_dst"
 }
 
 patch_dragino_qmi_wwan_q() {

@@ -85,6 +85,10 @@ The build script copies two host `m4` compatibility patches into
 other applies the glibc 2.28 `gnulib` fixes for `freadahead`, `fflush`,
 `fpurge`, `freading`, and `fseeko`.
 
+`bison` needs the same glibc 2.28 family fix for `lib/fseterr.c`, so the build
+script also copies a small `openwrt/tools/bison/patches` override before the
+host tools compile.
+
 The Dragino tree also ships `openwrt/package/kernel/qmi-wwan-q/Makefile` with
 obsolete dependency names like `cdc-wdm`, `usbcore`, and `usbnet`. The build
 script rewrites those to `kmod-usb-wdm`, `kmod-usb-core`, and `kmod-usb-net`
